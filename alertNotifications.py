@@ -3,10 +3,13 @@
 import smtplib
 import ConfigParser
 import subprocess
+import os
+
+path = path = os.path.dirname(os.path.abspath(__file__))
 
 #CPU temp for Raspberry pi
 def getPiCPUtemp():
-	temp = os.popen(‘vcgencmd measure_temp’).readline().strip("temp=").strip("'C\n")
+	temp = os.popen('vcgencmd measure_temp').readline().strip("temp=").strip("'C\n")
 	return temp
 	
 #requires 'dig' installed 
@@ -52,20 +55,31 @@ def rebootMessage(new,old):
 	if new == old:
 		return ""
 	else:
-		return "Server reboot @: "+new
+		return "Server reboot @: "+new+"\n"
 	
 def main():
+	alertMessage = ""
 	#Read configureation file
 	Config = ConfigParser.ConfigParser()
-	Config.read("config.ini")
+	Config.read(path+"/config.ini")
 
 	#read in previous values from configuration file
 	previousIp = Config.get('AlertInformation','ip')
 	lastReboot = Config.get('AlertInformation','lastReboot')
 	
+	
 	#call alert functions
 	currentIp = getIpAddress()
 	rebootTime = getRebootTime()
+	
+	#Add custom alerts as followed:
+	#code start
+	
+	#temp = getPiCPUtemp()
+	#if temp == "60":
+	#	alertMessage += "Server temp critical @"+temp+"\n"
+		
+	#code ends
 	
 	#For each alert condition update 'alertMessage', if no changes return
 	#empty string. Based on final string length we send the update.
@@ -79,7 +93,7 @@ def main():
 		#update the configuration file to new updated data
 		Config.set('AlertInformation','ip',currentIp)
 		Config.set('AlertInformation','lastReboot',rebootTime)
-		with open('config.ini', 'wb') as configfile:
+		with open(path+'/config.ini', 'wb') as configfile:
 			Config.write(configfile)
 			
 		sendMail(Config,alertMessage)
